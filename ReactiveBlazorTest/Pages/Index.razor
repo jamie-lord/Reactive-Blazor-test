@@ -1,0 +1,46 @@
+﻿@page "/"
+
+@inject Services.PersonService PersonService
+
+<h1>Hello, world!</h1>
+
+<EditForm Model="@_person">
+	<DataAnnotationsValidator />
+	<ValidationSummary />
+
+	<InputText id="first-name" @bind-Value="_person.FirstName" />
+	<InputText id="last-name" @bind-Value="_person.LastName" />
+	<InputDate id="created" @bind-Value="_person.Created" />
+
+</EditForm>
+
+<p>@_person.FirstName</p>
+
+<p>@_person.LastName</p>
+
+<p>@_person.Created</p>
+
+<button @onclick="Update">Update</button>
+
+
+@code
+{
+	private Services.Person _person;
+
+	protected override async Task OnInitializedAsync()
+	{
+		_person = await PersonService.Get(1);
+		_person.PropertyChanged += (s, e) =>
+		{
+			InvokeAsync(() =>
+			{
+				StateHasChanged();
+			});
+		};
+	}
+
+	private async Task Update()
+	{
+		await PersonService.Update();
+	}
+}
