@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Mapster;
+using Microsoft.EntityFrameworkCore;
+using ReactiveBlazorTest.Database;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -9,27 +12,33 @@ namespace ReactiveBlazorTest.Services
 {
     public class PersonService
     {
-        private List<Person> _people = new List<Person>();
+        private readonly DatabaseContext _databaseContext;
+        //private List<Person> _people = new List<Person>();
 
-        public PersonService()
+        public PersonService(DatabaseContext databaseContext)
         {
-            _people.Add(new Person
-            {
-                Id = 1,
-                FirstName = "Jamie",
-                LastName = "Lord",
-                Created = DateTime.Now
-            });
+            //_people.Add(new Person
+            //{
+            //    Id = 1,
+            //    FirstName = "Jamie",
+            //    LastName = "Lord",
+            //    Created = DateTime.Now
+            //});
+            _databaseContext = databaseContext;
         }
 
         public async Task<Person> Get(int id)
         {
-            return _people.FirstOrDefault(p => p.Id == id);
+            PersonPto pto = await _databaseContext.Persons.FirstOrDefaultAsync(p => p.Id == id);
+            return pto.Adapt<Person>();
         }
 
         public async Task Update()
         {
-            _people.First(p => p.Id == 1).Created = DateTime.Now;
+            PersonPto pto = await _databaseContext.Persons.FirstOrDefaultAsync(p => p.Id == 1);
+            pto.Created = DateTime.Now;
+            _databaseContext.Persons.Update(pto);
+            await _databaseContext.SaveChangesAsync();
         }
     }
 

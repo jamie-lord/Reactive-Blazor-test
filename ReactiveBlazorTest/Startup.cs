@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ReactiveBlazorTest.Data;
+using ReactiveBlazorTest.Database;
 using ReactiveBlazorTest.Services;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,10 @@ namespace ReactiveBlazorTest
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<WeatherForecastService>();
-            services.AddSingleton<PersonService>();
+
+            services.AddDbContext<DatabaseContext>();
+
+            services.AddTransient<PersonService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
