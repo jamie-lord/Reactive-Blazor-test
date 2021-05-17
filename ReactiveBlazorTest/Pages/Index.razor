@@ -15,9 +15,7 @@
 </EditForm>
 
 <p>@_person.FirstName</p>
-
 <p>@_person.LastName</p>
-
 <p>@_person.Created</p>
 
 <button @onclick="Update">Update</button>
@@ -30,17 +28,26 @@
 	protected override async Task OnInitializedAsync()
 	{
 		_person = await PersonService.Get(1);
-		_person.PropertyChanged += (s, e) =>
+		_person.PropertyChanged += OnPersonChanged;
+	}
+
+	private async void OnPersonChanged(object sender, EventArgs args)
+	{
+		await PersonService.Update(_person);
+		await InvokeAsync(() =>
 		{
-			InvokeAsync(() =>
-			{
-				StateHasChanged();
-			});
-		};
+			StateHasChanged();
+		});
 	}
 
 	private async Task Update()
 	{
-		await PersonService.Update();
+		_person.Created = DateTime.Now;
+		await PersonService.Update(_person);
+	}
+
+	public void Dispose()
+	{
+		_person.PropertyChanged -= OnPersonChanged;
 	}
 }

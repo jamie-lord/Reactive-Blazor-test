@@ -8,10 +8,6 @@ using Microsoft.Extensions.Hosting;
 using ReactiveBlazorTest.Data;
 using ReactiveBlazorTest.Database;
 using ReactiveBlazorTest.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ReactiveBlazorTest
 {
@@ -34,7 +30,8 @@ namespace ReactiveBlazorTest
 
             services.AddDbContext<DatabaseContext>();
 
-            services.AddTransient<PersonService>();
+            services.AddSingleton<UpdateService>();
+            services.AddScoped<PersonService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

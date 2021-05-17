@@ -1,10 +1,8 @@
 ﻿using Mapster;
-using Microsoft.EntityFrameworkCore;
 using ReactiveBlazorTest.Database;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -13,38 +11,55 @@ namespace ReactiveBlazorTest.Services
     public class PersonService
     {
         private readonly DatabaseContext _databaseContext;
-        //private List<Person> _people = new List<Person>();
+        private readonly UpdateService _updateService;
 
-        public PersonService(DatabaseContext databaseContext)
+        public PersonService(DatabaseContext databaseContext, UpdateService updateService)
         {
-            //_people.Add(new Person
-            //{
-            //    Id = 1,
-            //    FirstName = "Jamie",
-            //    LastName = "Lord",
-            //    Created = DateTime.Now
-            //});
             _databaseContext = databaseContext;
+            _updateService = updateService;
         }
 
         public async Task<Person> Get(int id)
         {
-            PersonPto pto = await _databaseContext.Persons.FirstOrDefaultAsync(p => p.Id == id);
-            return pto.Adapt<Person>();
+            PersonPto pto = await _databaseContext.Persons.FindAsync(id);
+            var person = new Person(pto.Id, _updateService);
+            return pto.Adapt(person);
         }
 
-        public async Task Update()
+        public async Task Update(Person person)
         {
-            PersonPto pto = await _databaseContext.Persons.FirstOrDefaultAsync(p => p.Id == 1);
-            pto.Created = DateTime.Now;
+            PersonPto pto = await _databaseContext.Persons.FindAsync(person.Id);
+            person.Adapt(pto);
             _databaseContext.Persons.Update(pto);
             await _databaseContext.SaveChangesAsync();
+
+            // Send update to all listening views
+            _updateService.Updated(person);
         }
     }
 
-    public class Person : INotifyPropertyChanged
+    public class Person : INotifyPropertyChanged, IDisposable
     {
-        public event PropertyChangedEventHandler? PropertyChanged;
+        private readonly UpdateService _updateService;
+
+        public readonly int Id;
+
+        public Person(int id, UpdateService updateService)
+        {
+            Id = id;
+            _updateService = updateService;
+            _updateService.OnPersonUpdated += OnPersonUpdated;
+        }
+
+        private void OnPersonUpdated(Person person)
+        {
+            if (person.Id == Id)
+            {
+                person.Adapt(this);
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         protected void OnPropertyChanged(string? propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
@@ -54,14 +69,6 @@ namespace ReactiveBlazorTest.Services
             field = value;
             OnPropertyChanged(propertyName);
             return true;
-        }
-
-        private int _id;
-
-        public int Id
-        {
-            get => _id;
-            set => SetField(ref _id, value);
         }
 
         private string _firstName;
@@ -86,6 +93,11 @@ namespace ReactiveBlazorTest.Services
         {
             get => _created;
             set => SetField(ref _created, value);
+        }
+
+        public void Dispose()
+        {
+            _updateService.OnPersonUpdated -= OnPersonUpdated;
         }
     }
 }
