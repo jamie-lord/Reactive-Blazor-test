@@ -24,16 +24,17 @@
 @code
 {
 	private Services.Person _person;
+	private readonly Guid _sessionId = Guid.NewGuid();
 
 	protected override async Task OnInitializedAsync()
 	{
-		_person = await PersonService.Get(1);
+		_person = await PersonService.Get(_sessionId, 1);
 		_person.PropertyChanged += OnPersonChanged;
 	}
 
 	private async void OnPersonChanged(object sender, EventArgs args)
 	{
-		await PersonService.Update(_person);
+		await PersonService.Update(_sessionId, _person);
 		await InvokeAsync(() =>
 		{
 			StateHasChanged();
@@ -43,7 +44,7 @@
 	private async Task Update()
 	{
 		_person.Created = DateTime.Now;
-		await PersonService.Update(_person);
+		await PersonService.Update(_sessionId, _person);
 	}
 
 	public void Dispose()

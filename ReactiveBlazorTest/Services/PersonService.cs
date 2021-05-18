@@ -19,14 +19,14 @@ namespace ReactiveBlazorTest.Services
             _updateService = updateService;
         }
 
-        public async Task<Person> Get(int id)
+        public async Task<Person> Get(Guid sessionId, int id)
         {
             PersonPto pto = await _databaseContext.Persons.FindAsync(id);
-            var person = new Person(pto.Id, _updateService);
+            var person = new Person(sessionId, pto.Id, _updateService);
             return pto.Adapt(person);
         }
 
-        public async Task Update(Person person)
+        public async Task Update(Guid sessionId, Person person)
         {
             PersonPto pto = await _databaseContext.Persons.FindAsync(person.Id);
             person.Adapt(pto);
@@ -34,28 +34,38 @@ namespace ReactiveBlazorTest.Services
             await _databaseContext.SaveChangesAsync();
 
             // Send update to all listening views
-            _updateService.Updated(person);
+            _updateService.Updated(new UpdateEvent
+            {
+                SessionId = sessionId,
+                Person = person
+            });
         }
     }
 
     public class Person : INotifyPropertyChanged, IDisposable
     {
         private readonly UpdateService _updateService;
-
+        private readonly Guid _sessionId;
         public readonly int Id;
 
-        public Person(int id, UpdateService updateService)
+        public Person(Guid sessionId, int id, UpdateService updateService)
         {
+            _sessionId = sessionId;
             Id = id;
             _updateService = updateService;
             _updateService.OnPersonUpdated += OnPersonUpdated;
         }
 
-        private void OnPersonUpdated(Person person)
+        private void OnPersonUpdated(UpdateEvent updateEvent)
         {
-            if (person.Id == Id)
+            if (updateEvent.SessionId == _sessionId)
             {
-                person.Adapt(this);
+                return;
+            }
+
+            if (updateEvent.Person.Id == Id)
+            {
+                updateEvent.Person.Adapt(this);
             }
         }
 

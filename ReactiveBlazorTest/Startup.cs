@@ -31,7 +31,7 @@ namespace ReactiveBlazorTest
             services.AddDbContext<DatabaseContext>();
 
             services.AddSingleton<UpdateService>();
-            services.AddScoped<PersonService>();
+            services.AddTransient<PersonService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
