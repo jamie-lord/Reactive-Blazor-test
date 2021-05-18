@@ -21,13 +21,15 @@ namespace ReactiveBlazorTest.Services
 
         public async Task<Person> Get(Guid sessionId, int id)
         {
+            Console.WriteLine($"{DateTime.Now}\t{sessionId}\tPersonService.Get()");
             PersonPto pto = await _databaseContext.Persons.FindAsync(id);
-            var person = new Person(sessionId, pto.Id, _updateService);
+            var person = new Person(sessionId, pto.Id);
             return pto.Adapt(person);
         }
 
         public async Task Update(Guid sessionId, Person person)
         {
+            Console.WriteLine($"{DateTime.Now}\t{sessionId}\tPersonService.Update()");
             PersonPto pto = await _databaseContext.Persons.FindAsync(person.Id);
             person.Adapt(pto);
             _databaseContext.Persons.Update(pto);
@@ -42,31 +44,15 @@ namespace ReactiveBlazorTest.Services
         }
     }
 
-    public class Person : INotifyPropertyChanged, IDisposable
+    public class Person : INotifyPropertyChanged
     {
-        private readonly UpdateService _updateService;
         private readonly Guid _sessionId;
         public readonly int Id;
 
-        public Person(Guid sessionId, int id, UpdateService updateService)
+        public Person(Guid sessionId, int id)
         {
             _sessionId = sessionId;
             Id = id;
-            _updateService = updateService;
-            _updateService.OnPersonUpdated += OnPersonUpdated;
-        }
-
-        private void OnPersonUpdated(UpdateEvent updateEvent)
-        {
-            if (updateEvent.SessionId == _sessionId)
-            {
-                return;
-            }
-
-            if (updateEvent.Person.Id == Id)
-            {
-                updateEvent.Person.Adapt(this);
-            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -76,6 +62,7 @@ namespace ReactiveBlazorTest.Services
         protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            Console.WriteLine($"{DateTime.Now}\t{_sessionId}\tPerson.SetField({value})");
             field = value;
             OnPropertyChanged(propertyName);
             return true;
@@ -103,11 +90,6 @@ namespace ReactiveBlazorTest.Services
         {
             get => _created;
             set => SetField(ref _created, value);
-        }
-
-        public void Dispose()
-        {
-            _updateService.OnPersonUpdated -= OnPersonUpdated;
         }
     }
 }

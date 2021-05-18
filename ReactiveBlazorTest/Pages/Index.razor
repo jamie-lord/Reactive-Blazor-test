@@ -1,6 +1,9 @@
 ﻿@page "/"
 
+@using Mapster
+
 @inject Services.PersonService PersonService
+@inject Services.UpdateService UpdateService
 
 <h1>Hello, world!</h1>
 
@@ -14,6 +17,7 @@
 
 </EditForm>
 
+<p>@_sessionId</p>
 <p>@_person.FirstName</p>
 <p>@_person.LastName</p>
 <p>@_person.Created</p>
@@ -30,25 +34,61 @@
 	{
 		_person = await PersonService.Get(_sessionId, 1);
 		_person.PropertyChanged += OnPersonChanged;
+		UpdateService.OnPersonUpdated += OnPersonUpdated;
 	}
 
 	private async void OnPersonChanged(object sender, EventArgs args)
 	{
-		await PersonService.Update(_sessionId, _person);
-		await InvokeAsync(() =>
+		Console.WriteLine($"{DateTime.Now}\t{_sessionId}\tIndex.OnPersonChanged()");
+		if (!_stopSave)
 		{
-			StateHasChanged();
-		});
+			await PersonService.Update(_sessionId, _person);
+		}
+		else
+		{
+			await InvokeAsync(() =>
+			{
+				StateHasChanged();
+			});
+		}
 	}
 
 	private async Task Update()
 	{
+		if (_stopSave)
+		{
+			return;
+		}
+
+		Console.WriteLine($"{DateTime.Now}\t{_sessionId}\tIndex.Update()");
 		_person.Created = DateTime.Now;
-		await PersonService.Update(_sessionId, _person);
+	}
+
+	private bool _stopSave;
+
+	private void OnPersonUpdated(Services.UpdateEvent updateEvent)
+	{
+		if (updateEvent.SessionId == _sessionId)
+		{
+			return;
+		}
+
+		if (updateEvent.Person.Id == _person.Id)
+		{
+			if (updateEvent.Person.FirstName != _person.FirstName || updateEvent.Person.LastName != _person.LastName || updateEvent.Person.Created != _person.Created)
+			{
+				Console.WriteLine($"{DateTime.Now}\t{_sessionId}\tIndex.OnPersonUpdated() Updated");
+				_stopSave = true;
+				updateEvent.Person.Adapt(_person);
+				_stopSave = false;
+			}
+		}
 	}
 
 	public void Dispose()
 	{
+		Console.WriteLine($"{DateTime.Now}\t{_sessionId}\tIndex.Dispose()");
+		UpdateService.OnPersonUpdated -= OnPersonUpdated;
 		_person.PropertyChanged -= OnPersonChanged;
 	}
 }

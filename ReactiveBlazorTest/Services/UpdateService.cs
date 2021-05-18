@@ -10,7 +10,7 @@ namespace ReactiveBlazorTest.Services
 
         public void Updated(UpdateEvent updateEvent)
         {
-            Console.WriteLine($"{DateTime.Now}\t{updateEvent.SessionId}\tUpdated person {updateEvent.Person.Id}");
+            Console.WriteLine($"{DateTime.Now}\t{updateEvent.SessionId}\tUpdateService.Updated()");
             OnPersonUpdated?.Invoke(updateEvent);
         }
     }
