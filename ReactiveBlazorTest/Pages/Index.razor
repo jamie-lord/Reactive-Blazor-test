@@ -35,8 +35,7 @@
 	{
 		_person = await PersonService.Get(_sessionId, 1);
 		_person.PropertyChanged += OnPersonChanged;
-		_observer = new Services.UpdateObserver(OnPersonUpdated);
-		_observer.Subscribe(UpdateObservable);
+		_observer = new Services.UpdateObserver(UpdateObservable, 1, OnPersonUpdated);
 	}
 
 	private async void OnPersonChanged(object sender, EventArgs args)
@@ -90,7 +89,7 @@
 	public void Dispose()
 	{
 		Console.WriteLine($"{DateTime.Now}\t{_sessionId}\tIndex.Dispose()");
-		_observer.Unsubscribe();
+		_observer.Dispose();
 		_person.PropertyChanged -= OnPersonChanged;
 	}
 }

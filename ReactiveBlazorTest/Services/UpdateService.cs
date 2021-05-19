@@ -5,25 +5,35 @@ namespace ReactiveBlazorTest.Services
 {
     public class UpdateObservable : IObservable<UpdateEvent>
     {
-        private readonly List<IObserver<UpdateEvent>> _observers = new();
+        private readonly Dictionary<int, List<IObserver<UpdateEvent>>> _observers = new();
 
         public void Updated(UpdateEvent updateEvent)
         {
             Console.WriteLine($"{DateTime.Now}\t{updateEvent.SessionId}\tUpdateObservable.Updated()");
-            foreach (var observer in _observers)
+            if (_observers.ContainsKey(updateEvent.Person.Id))
             {
-                observer.OnNext(updateEvent);
+                foreach (var observer in _observers[updateEvent.Person.Id])
+                {
+                    observer.OnNext(updateEvent);
+                }
             }
         }
 
         public IDisposable Subscribe(IObserver<UpdateEvent> observer)
         {
-            if (!_observers.Contains(observer))
+            var o = (UpdateObserver)observer;
+
+            if (!_observers.ContainsKey(o.ObjId))
             {
-                _observers.Add(observer);
+                _observers[o.ObjId] = new();
             }
 
-            return new Unsubscriber(_observers, observer);
+            if (!_observers[o.ObjId].Contains(observer))
+            {
+                _observers[o.ObjId].Add(observer);
+            }
+
+            return new Unsubscriber(_observers[o.ObjId], observer);
         }
 
         public class Unsubscriber : IDisposable
@@ -47,24 +57,18 @@ namespace ReactiveBlazorTest.Services
         }
     }
 
-    public class UpdateObserver : IObserver<UpdateEvent>
+    public class UpdateObserver : IObserver<UpdateEvent>, IDisposable
     {
-        private IDisposable unsubscriber;
+        private IDisposable _unsubscriber;
         private readonly Action<UpdateEvent> _func;
 
-        public UpdateObserver(Action<UpdateEvent> func)
+        public readonly int ObjId;
+
+        public UpdateObserver(IObservable<UpdateEvent> provider, int objId, Action<UpdateEvent> func)
         {
+            ObjId = objId;
             _func = func;
-        }
-
-        public void Subscribe(IObservable<UpdateEvent> provider)
-        {
-            unsubscriber = provider.Subscribe(this);
-        }
-
-        public void Unsubscribe()
-        {
-            unsubscriber.Dispose();
+            _unsubscriber = provider.Subscribe(this);
         }
 
         public void OnNext(UpdateEvent value)
@@ -80,6 +84,11 @@ namespace ReactiveBlazorTest.Services
         public void OnError(Exception error)
         {
             throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {
+            _unsubscriber.Dispose();
         }
     }
 
