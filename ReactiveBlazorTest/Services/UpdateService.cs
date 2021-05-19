@@ -33,26 +33,34 @@ namespace ReactiveBlazorTest.Services
                 _observers[o.ObjId].Add(observer);
             }
 
-            return new Unsubscriber(_observers[o.ObjId], observer);
+            return new Unsubscriber(o.ObjId, observer, Unsubscribe);
+        }
+
+        private void Unsubscribe(Unsubscriber unsubscriber)
+        {
+            _observers[unsubscriber.ObjId].Remove(unsubscriber.Observer);
+            if (_observers[unsubscriber.ObjId].Count == 0)
+            {
+                _observers.Remove(unsubscriber.ObjId);
+            }
         }
 
         public class Unsubscriber : IDisposable
         {
-            private List<IObserver<UpdateEvent>> _observers;
-            private IObserver<UpdateEvent> _observer;
+            public readonly int ObjId;
+            public readonly IObserver<UpdateEvent> Observer;
+            private readonly Action<Unsubscriber> _onDispose;
 
-            public Unsubscriber(List<IObserver<UpdateEvent>> observers, IObserver<UpdateEvent> observer)
+            public Unsubscriber(int objId, IObserver<UpdateEvent> observer, Action<Unsubscriber> onDispose)
             {
-                _observers = observers;
-                _observer = observer;
+                ObjId = objId;
+                Observer = observer;
+                _onDispose = onDispose;
             }
 
             public void Dispose()
             {
-                if (_observer != null)
-                {
-                    _observers.Remove(_observer);
-                }
+                _onDispose.Invoke(this);
             }
         }
     }
