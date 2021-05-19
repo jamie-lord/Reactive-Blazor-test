@@ -30,7 +30,7 @@ namespace ReactiveBlazorTest
 
             services.AddDbContext<DatabaseContext>();
 
-            services.AddSingleton<UpdateService>();
+            services.AddSingleton<UpdateObservable>();
             services.AddTransient<PersonService>();
         }
 

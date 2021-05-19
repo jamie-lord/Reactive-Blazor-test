@@ -3,7 +3,7 @@
 @using Mapster
 
 @inject Services.PersonService PersonService
-@inject Services.UpdateService UpdateService
+@inject Services.UpdateObservable UpdateObservable
 
 <h1>Hello, world!</h1>
 
@@ -29,12 +29,14 @@
 {
 	private Services.Person _person;
 	private readonly Guid _sessionId = Guid.NewGuid();
+	private Services.UpdateObserver _observer;
 
 	protected override async Task OnInitializedAsync()
 	{
 		_person = await PersonService.Get(_sessionId, 1);
 		_person.PropertyChanged += OnPersonChanged;
-		UpdateService.OnPersonUpdated += OnPersonUpdated;
+		_observer = new Services.UpdateObserver(OnPersonUpdated);
+		_observer.Subscribe(UpdateObservable);
 	}
 
 	private async void OnPersonChanged(object sender, EventArgs args)
@@ -88,7 +90,7 @@
 	public void Dispose()
 	{
 		Console.WriteLine($"{DateTime.Now}\t{_sessionId}\tIndex.Dispose()");
-		UpdateService.OnPersonUpdated -= OnPersonUpdated;
+		_observer.Unsubscribe();
 		_person.PropertyChanged -= OnPersonChanged;
 	}
 }

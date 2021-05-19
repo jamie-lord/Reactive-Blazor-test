@@ -11,12 +11,12 @@ namespace ReactiveBlazorTest.Services
     public class PersonService
     {
         private readonly DatabaseContext _databaseContext;
-        private readonly UpdateService _updateService;
+        private readonly UpdateObservable _updateObservable;
 
-        public PersonService(DatabaseContext databaseContext, UpdateService updateService)
+        public PersonService(DatabaseContext databaseContext, UpdateObservable updateObservable)
         {
             _databaseContext = databaseContext;
-            _updateService = updateService;
+            _updateObservable = updateObservable;
         }
 
         public async Task<Person> Get(Guid sessionId, int id)
@@ -36,7 +36,7 @@ namespace ReactiveBlazorTest.Services
             await _databaseContext.SaveChangesAsync();
 
             // Send update to all listening views
-            _updateService.Updated(new UpdateEvent
+            _updateObservable.Updated(new UpdateEvent
             {
                 SessionId = sessionId,
                 Person = person
