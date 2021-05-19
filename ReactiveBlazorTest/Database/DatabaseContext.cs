@@ -8,7 +8,7 @@ namespace ReactiveBlazorTest.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite(@"Data Source=C:\ReactiveBlazorTest.db");
+            optionsBuilder.UseSqlite(@"Data Source=ReactiveBlazorTest.db");
         }
     }
 }
