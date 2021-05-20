@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ReactiveBlazorTest.Services
 {
@@ -43,6 +44,11 @@ namespace ReactiveBlazorTest.Services
             {
                 _observers.Remove(unsubscriber.ObjId);
             }
+        }
+
+        public int NumberOfSubscriptions()
+        {
+            return _observers.SelectMany(x => x.Value).Count();
         }
 
         public class Unsubscriber : IDisposable
