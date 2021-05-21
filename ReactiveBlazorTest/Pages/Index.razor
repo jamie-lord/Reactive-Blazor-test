@@ -24,14 +24,23 @@
 
 <p>Connected clients: @UpdateObservable.NumberOfSubscriptions()</p>
 
-<button @onclick="Update">Update</button>
+<button @onclick="Update">Set date to now</button>
 
+<h2>Updates</h2>
+
+<ul>
+	@foreach (var updateEvent in _updateEvents.OrderByDescending(x => x.Key))
+	{
+	 <li>@updateEvent.Key @updateEvent.Value</li>
+	}
+</ul>
 
 @code
 {
 	private Services.Person _person;
 	private readonly Guid _sessionId = Guid.NewGuid();
 	private Services.UpdateObserver _observer;
+	private List<KeyValuePair<DateTime, string>> _updateEvents = new();
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -71,6 +80,8 @@
 
 	private void OnPersonUpdated(Services.UpdateEvent updateEvent)
 	{
+		_updateEvents.Add(new KeyValuePair<DateTime, string>(DateTime.Now, Newtonsoft.Json.JsonConvert.SerializeObject(updateEvent)));
+
 		if (updateEvent.SessionId == _sessionId)
 		{
 			return;
